@@ -1,4 +1,4 @@
-Shader "Temp/vf8" {
+Shader "Max/vflight" {
 	Properties {
 		_MainColor("mc",Color) = (1,1,1,1)
 		_SpecalarColor("SpecularColor",Color) = (1,1,1,1)
@@ -23,6 +23,7 @@ Shader "Temp/vf8" {
                 float4 pos : SV_POSITION;  
                 float3 normal :NORMAL;
                 float4 vertex: COLOR;
+                half2 uv:TEXCOORD0;
                 half2 uvLM : TEXCOORD1;
             };
 			float4 _Tex_ST;
@@ -37,6 +38,7 @@ Shader "Temp/vf8" {
                 o.normal = v.normal;
                 o.vertex = v.vertex;
                 o.uvLM = v.texcoord1.xy * unity_LightmapST.xy + unity_LightmapST.zw;  
+                o.uv = v.texcoord.xy;
                 return o;
             }
 
@@ -49,7 +51,7 @@ Shader "Temp/vf8" {
                 float3 V = normalize(WorldSpaceViewDir(v.vertex));
                   //deffuse Color 漫反射
                 float ndot = saturate(dot(N,L));//saturate把点积的结果限定在[0-1]
-                col += _LightColor0*_MainColor * ndot;
+                col += (_LightColor0*_MainColor) * ndot;
                 // 高光
                 float3 R = 2*dot(N,L)*N-L;
                 R = normalize(R);
@@ -69,9 +71,11 @@ Shader "Temp/vf8" {
  				//烘焙获取灯光贴图
  				fixed3 lm = DecodeLightmap (UNITY_SAMPLE_TEX2D(unity_Lightmap, v.uvLM.xy)); 
                 //col += _SpecalarColor * specularScale;
-                float4 t = tex2D(_Tex,v.uvLM*_Tex_ST.xy);
-                t.rgb= col.rgb+(lm/1.5);
-                return t;
+                float4 bt = tex2D(_Tex,v.uv);
+                float4 c =float4(bt.rgb*lm,1);
+                c+=(bt/3);
+                //t.rgb= t.rgb;
+                return c;
             }
 
 
